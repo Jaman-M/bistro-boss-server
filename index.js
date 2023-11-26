@@ -33,13 +33,13 @@ async function run() {
         const reviewCollection = client.db('bistroDb').collection("reviews");
         const cartCollection = client.db('bistroDb').collection("carts");
 
-        //users related apis
+        //users related apis 
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await usersCollection.insertOne(user);
             res.send(result);
         })
-
+ 
 
         //menu related api
         app.get('/menu', async (req, res) => {
