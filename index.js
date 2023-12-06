@@ -60,9 +60,25 @@ async function run() {
             res.send({ token })
         })
 
+        // warning: use verifyJWT before using verifyAdmin
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ error: true, message: 'forbidden message' });
+            }
+            next();
+        }
+
+        /***
+         * 0. dd not show the secure links to those who should not see the links
+         * 1. use jwt tocken : verifyJWT
+         * 2. use verifyAdmin middlewaree
+         */
         //users related apis 
 
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result)
         })
@@ -78,6 +94,23 @@ async function run() {
             }
             const result = await usersCollection.insertOne(user);
             res.send(result);
+        })
+
+        //secure layer: verifyJWT
+        //email same
+        //check admin
+        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            if (req.decoded.email !== email) {
+                res.send({ admin: false })
+            }
+
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            const result = { admin: user?.role === 'admin' }
+            res.send(result);
+
         })
 
         // for admin role
@@ -126,8 +159,8 @@ async function run() {
             }
 
             const decodedEmail = req.decoded.email;
-            if(email !== decodedEmail){
-                return res.status(403).send({ error: true, message: 'porviden access' });
+            if (email !== decodedEmail) {
+                return res.status(403).send({ error: true, message: 'forbidden access' });
             }
 
             const query = { email: email };
